@@ -26,3 +26,8 @@ jobs:
 
 #    - name: Test
 #      run: go test -v ./...
+
+    - name: Build Markdown Pages
+      run: |
+        go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
+        gomarkdoc --output=docs/code/hydra.md --title="Hydra" --repo="https://github.com/sphireinc/Hydra" --package="hydra" --exclude="main.go,example.go"
