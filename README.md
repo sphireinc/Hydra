@@ -11,6 +11,9 @@ databases. The library supports multiple databases, including MySQL, PostgreSQL,
 Microsoft SQL Server, Oracle, MariaDB, and CockroachDB. Using reflection and `hydra` tags, 
 it automatically fills struct fields with data fetched from database queries.
 
+> [!WARNING]  
+> Hydra went from idea to fruition in the span of 4 hours. It is still a very immature project, use it at your own risk. I welcome all opinions, contributions, and ideas on how to make this a better project. 
+
 ## Features
 
 - **Automatic Hydration**: Automatically populates Go structs with data fetched from databases using reflection.
