@@ -11,7 +11,7 @@ type IHydratable interface {
 }
 
 type Hydratable struct {
-	XDBTypeOverride string
+	XDBTypeOverride string      // The database type to override the default detection, e.g. sqlite, mssql, mariadb, oracle, mysql
 	name            string      // The name of the object to be hydrated
 	isInitialized   bool        // Flag to check if the object has been initialized
 	self            interface{} // The object that is to be hydrated
