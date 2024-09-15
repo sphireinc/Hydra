@@ -1,6 +1,8 @@
 # Sphire Hydra
 
-![Build Passing](https://github.com/sphireinc/Hydra/actions/workflows/go.yml/badge.svg)
+[![Build](https://github.com/sphireinc/Hydra/actions/workflows/build.yml/badge.svg)](https://github.com/sphireinc/Hydra/actions/workflows/build.yml)
+
+[![pre-release](https://github.com/sphireinc/Hydra/actions/workflows/pre-release.yml/badge.svg)](https://github.com/sphireinc/Hydra/actions/workflows/pre-release.yml)
 
 <div align="center">
     <img src="logo.jpg" width="400px"  alt="logo" />
