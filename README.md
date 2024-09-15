@@ -1,7 +1,8 @@
 # Sphire Hydra
 
 [![Build](https://github.com/sphireinc/Hydra/actions/workflows/build.yml/badge.svg)](https://github.com/sphireinc/Hydra/actions/workflows/build.yml)
-[![pre-release](https://github.com/sphireinc/Hydra/actions/workflows/pre-release.yml/badge.svg)](https://github.com/sphireinc/Hydra/actions/workflows/pre-release.yml)
+[![Pre Release](https://github.com/sphireinc/Hydra/actions/workflows/pre-release.yml/badge.svg)](https://github.com/sphireinc/Hydra/actions/workflows/pre-release.yml)
+[![Pages](https://github.com/sphireinc/Hydra/actions/workflows/pages/pages-build-deployment/badge.svg)](https://github.com/sphireinc/Hydra/actions/workflows/pages/pages-build-deployment)
 
 <div align="center">
     <img src="logo.jpg" width="400px"  alt="logo" />
