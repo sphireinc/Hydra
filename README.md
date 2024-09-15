@@ -3,11 +3,11 @@
 ![Build Passing](https://github.com/sphireinc/Hydra/actions/workflows/go.yml/badge.svg)
 
 <div align="center">
-    <img src="logo.jpg" width="400px" />
+    <img src="logo.jpg" width="400px"  alt="logo" />
 </div>
 
-Sphire Hydra is a Go library designed to dynamically hydrate Go structs with data from various 
-databases. The library supports multiple databases, including MySQL, PostgreSQL, SQLite, 
+Sphire Hydra is a Go library designed to dynamically hydrate Go structs with data from a variety of databases.
+The library supports multiple databases, including MySQL, PostgreSQL, SQLite, 
 Microsoft SQL Server, Oracle, MariaDB, and CockroachDB. Using reflection and `hydra` tags, 
 it automatically fills struct fields with data fetched from database queries.
 
@@ -44,7 +44,8 @@ go get github.com/sphireinc/Hydra
 
 ### Struct Definition
 
-Define your structs with hydra tags to map the struct fields to the corresponding database columns:
+Define your structs with hydra tags to map the struct fields to the corresponding database columns, annd 
+embed the hydra.Hydratable struct:
 
 ```go
 type Person struct {
@@ -76,16 +77,24 @@ type Person struct {
     hydra.Hydratable
 }
 
-func main() {
-    // Initialize a MySQL database connection
-    db, _ := sql.Open("mysql", "user:password@/dbname")
+func createDBConnection() *sql.DB {
+	db, _ := sql.Open("mysql", "user:password@/dbname")
+	return db
+}
 
-    // Create an addressable Person instance
-    p := &Person{}
+func main() {
+	// Create a database connection
+	db := createDBConnection() 
+
+	// Create an addressable Person instance and initialize the hydra.Hydratable struct
+    p := &Person{} 
     p.Init(p)
 
+	// Create a map of where clauses
+	whereClause := map[string]interface{}{"id": "U6"} 
+
     // Call Hydrate to populate the struct with data from the database
-    p.Hydrate(db, map[string]interface{}{"id": "U6"})
+    p.Hydrate(db, whereClause)
 
     // Print the hydrated struct
     fmt.Printf("Hydrated person: %+v\n", p)

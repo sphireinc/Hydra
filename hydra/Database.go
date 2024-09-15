@@ -8,8 +8,8 @@ import (
 
 // Fetch hydrates the object with data from the database
 // @param db The database connection
-// @param query The query to execute
-// @param params The parameters to pass to the query
+// @param tableName The name of the table to fetch data from
+// @param whereClauses The where clauses to filter the data
 // @return map[string]interface{} The hydrated data
 // @return error The error if any occurred
 func (h *Hydratable) Fetch(db any, tableName string, whereClauses map[string]interface{}) (map[string]interface{}, error) {
