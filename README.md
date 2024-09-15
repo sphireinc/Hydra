@@ -1,6 +1,8 @@
 # Sphire Hydra
 
-![](logo.jpg){: width="50%"}
+<div align="center">
+    <img src="logo.jpg" width="400px" />
+</div>
 
 Sphire Hydra is a Go library designed to dynamically hydrate Go structs with data from various 
 databases. The library supports multiple databases, including MySQL, PostgreSQL, SQLite, 
