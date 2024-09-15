@@ -1,8 +1,11 @@
 # Sphire Hydra
 
 [![Build](https://github.com/sphireinc/Hydra/actions/workflows/build.yml/badge.svg)](https://github.com/sphireinc/Hydra/actions/workflows/build.yml)
-[![Pre Release](https://github.com/sphireinc/Hydra/actions/workflows/pre-release.yml/badge.svg)](https://github.com/sphireinc/Hydra/actions/workflows/pre-release.yml)
-[![Pages](https://github.com/sphireinc/Hydra/actions/workflows/pages/pages-build-deployment/badge.svg)](https://github.com/sphireinc/Hydra/actions/workflows/pages/pages-build-deployment)
+[![Documentation](https://img.shields.io/badge/Pages-passing-green)](https://sphireinc.github.io/Hydra/)
+[![License](https://img.shields.io/github/license/sphireinc/hydra)](https://github.com/sphireinc/Hydra/releases/latest)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/sphireinc/hydra)](https://github.com/sphireinc/Hydra/releases/latest)
+[![Release Version](https://img.shields.io/github/v/release/sphireinc/hydra)](https://github.com/sphireinc/Hydra/releases/latest)
+[![Release Date](https://img.shields.io/github/release-date/sphireinc/hydra)](https://github.com/sphireinc/Hydra/releases/latest)
 
 <div align="center">
     <img src="logo.jpg" width="400px"  alt="logo" />
