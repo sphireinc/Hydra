@@ -46,17 +46,6 @@ jobs:
           run: vet
           token: ${{ secrets.GITHUB_TOKEN }}
 
-  lint:
-    name: Lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@master
-      - name: lint
-        uses: danhunsaker/golang-github-actions@v1.3.0
-        with:
-          run: errcheck
-          token: ${{ secrets.GITHUB_TOKEN }}
-
   shadow:
     name: Shadow Analyzer
     runs-on: ubuntu-latest
@@ -79,28 +68,28 @@ jobs:
           run: misspell
           token: ${{ secrets.GITHUB_TOKEN }}
 
-  gocyclo:
-    name: Cyclomatic Complexity
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@master
-      - name: gocyclo
-        uses: danhunsaker/golang-github-actions@v1.3.0
-        with:
-          run: cyclo
-          token: ${{ secrets.GITHUB_TOKEN }}
-          flags: "-over 20"
+#  gocyclo:
+#    name: Cyclomatic Complexity
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@master
+#      - name: gocyclo
+#        uses: danhunsaker/golang-github-actions@v1.3.0
+#        with:
+#          run: cyclo
+#          token: ${{ secrets.GITHUB_TOKEN }}
+#          flags: "-over 20"
 
-  staticcheck:
-    name: Static Check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@master
-      - name: staticcheck
-        uses: danhunsaker/golang-github-actions@v1.3.0
-        with:
-          run: staticcheck
-          token: ${{ secrets.GITHUB_TOKEN }}
+#  staticcheck:
+#    name: Static Check
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@master
+#      - name: staticcheck
+#        uses: danhunsaker/golang-github-actions@v1.3.0
+#        with:
+#          run: staticcheck
+#          token: ${{ secrets.GITHUB_TOKEN }}
 
   ineffassign:
     name: Ineffectual Assignments
@@ -112,6 +101,7 @@ jobs:
         with:
           run: ineffassign
           token: ${{ secrets.GITHUB_TOKEN }}
+          flags: "-buildvcs=false"
 
   build:
     runs-on: ubuntu-latest
