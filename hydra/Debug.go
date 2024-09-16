@@ -6,6 +6,6 @@ const debug = false
 
 func p(a ...any) {
 	if debug {
-		fmt.Println(a)
+		fmt.Println(a...)
 	}
 }
