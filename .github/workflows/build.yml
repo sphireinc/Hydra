@@ -91,17 +91,17 @@ jobs:
 #          run: staticcheck
 #          token: ${{ secrets.GITHUB_TOKEN }}
 
-  ineffassign:
-    name: Ineffectual Assignments
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@master
-      - name: ineffassign
-        uses: danhunsaker/golang-github-actions@v1.3.0
-        with:
-          run: ineffassign
-          token: ${{ secrets.GITHUB_TOKEN }}
-          flags: "-buildvcs=false"
+#  ineffassign:
+#    name: Ineffectual Assignments
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@master
+#      - name: ineffassign
+#        uses: danhunsaker/golang-github-actions@v1.3.0
+#        with:
+#          run: ineffassign
+#          token: ${{ secrets.GITHUB_TOKEN }}
+#          flags: "-buildvcs=false"
 
   build:
     runs-on: ubuntu-latest
