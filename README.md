@@ -7,9 +7,9 @@
 [![Release Version](https://img.shields.io/github/v/release/sphireinc/hydra)](https://github.com/sphireinc/Hydra/releases/latest)
 [![Release Date](https://img.shields.io/github/release-date/sphireinc/hydra)](https://github.com/sphireinc/Hydra/releases/latest)
 
-<figure align="center">
+<div align="center">
     <img src="logo.jpg" width="400px"  alt="logo" />
-</figure>
+</div>
 
 Sphire Hydra is a Go library designed to dynamically hydrate Go structs with data from a variety of databases.
 The library supports multiple databases, including MySQL, PostgreSQL, SQLite, 
