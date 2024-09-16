@@ -113,7 +113,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go: [ '1.18', '1.19', '1.20', '1.21', '1.22.3' ]
+        go: [ '1.19', '1.20', '1.21', '1.22.3' ]
     steps:
       - name: Checkout Code ${{ matrix.go }}
         uses: actions/checkout@v4
