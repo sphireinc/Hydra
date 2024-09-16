@@ -66,7 +66,7 @@ func (h *Hydratable) Hydrate(db any, whereClauses map[string]interface{}) error 
 						fieldValue.Set(reflect.ValueOf(value)) // Handle pointers by setting the pointer to the value
 					default:
 						fieldValue.Set(reflect.ValueOf(value)) // Hail mary
-						p("unhandled type: %v\n", fieldValue.Kind())
+						p(fmt.Sprintf("unhandled type: %v\n", fieldValue.Kind()))
 					}
 				}
 			}

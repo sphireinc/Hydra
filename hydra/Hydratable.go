@@ -1,6 +1,7 @@
 package hydra
 
 import (
+	"fmt"
 	"reflect"
 )
 
@@ -45,9 +46,9 @@ func (h *Hydratable) Init(o interface{}) interface{} {
 
 			// If the tag is not empty, add it to the hydrate list
 			if tag != "" {
-				p("%d. Field: %v (%v), tag: '%v' - Will be hydrated\n", i+1, field.Name, field.Type, tag)
+				p(fmt.Sprintf("%d. Field: %v (%v), tag: '%v' - Will be hydrated\n", i+1, field.Name, field.Type, tag))
 			} else {
-				p("%d. Field: %v (%v), tag: '%v' - Skipped\n", i+1, field.Name, field.Type, tag)
+				p(fmt.Sprintf("%d. Field: %v (%v), tag: '%v' - Skipped\n", i+1, field.Name, field.Type, tag))
 			}
 		}
 	}
