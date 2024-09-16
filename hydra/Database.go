@@ -3,6 +3,7 @@ package hydra
 import (
 	"database/sql"
 	"fmt"
+
 	"github.com/jackc/pgx/v5"
 )
 

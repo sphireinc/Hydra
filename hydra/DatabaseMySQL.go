@@ -3,8 +3,9 @@ package hydra
 import (
 	"database/sql"
 	"fmt"
-	_ "github.com/go-sql-driver/mysql"
 	"strings"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
 // fetchMySQL fetches data from a MySQL database using a query

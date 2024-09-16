@@ -3,8 +3,9 @@ package hydra
 import (
 	"database/sql"
 	"fmt"
-	_ "github.com/denisenkom/go-mssqldb"
 	"strings"
+
+	_ "github.com/denisenkom/go-mssqldb"
 )
 
 func (h *Hydratable) fetchMSSQL(db *sql.DB, tableName string, whereClauses map[string]interface{}) (map[string]interface{}, error) {

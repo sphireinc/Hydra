@@ -3,8 +3,9 @@ package hydra
 import (
 	"context"
 	"fmt"
-	"github.com/jackc/pgx/v5"
 	"strings"
+
+	"github.com/jackc/pgx/v5"
 )
 
 func (h *Hydratable) fetchCockroachDB(db *pgx.Conn, tableName string, whereClauses map[string]interface{}) (map[string]interface{}, error) {

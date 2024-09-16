@@ -3,8 +3,9 @@ package hydra
 import (
 	"database/sql"
 	"fmt"
-	_ "github.com/go-sql-driver/mysql"
 	"strings"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
 func (h *Hydratable) fetchMariaDB(db *sql.DB, tableName string, whereClauses map[string]interface{}) (map[string]interface{}, error) {
