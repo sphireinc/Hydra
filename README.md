@@ -88,15 +88,15 @@ func createDBConnection() *sql.DB {
 }
 
 func main() {
-	// Create a database connection
-	db := createDBConnection() 
+    // Create a database connection
+    db := createDBConnection() 
 
-	// Create an addressable Person instance and initialize the hydra.Hydratable struct
+    // Create an addressable Person instance and initialize the hydra.Hydratable struct
     p := &Person{} 
     p.Init(p)
 
-	// Create a map of where clauses
-	whereClause := map[string]interface{}{"id": "U6"} 
+    // Create a map of where clauses
+    whereClause := map[string]interface{}{"id": "U6"} 
 
     // Call Hydrate to populate the struct with data from the database
     p.Hydrate(db, whereClause)
