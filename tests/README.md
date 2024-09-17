@@ -94,32 +94,6 @@ func TestHydratePerson(t *testing.T) {
 }
 ```
 
-[//]: # (## Running Tests with Coverage)
-
-[//]: # ()
-[//]: # (To run the tests with code coverage, you can use the following command:)
-
-[//]: # ()
-[//]: # (```bash)
-
-[//]: # (go test -coverprofile=coverage.out -v ./tests)
-
-[//]: # (```)
-
-[//]: # ()
-[//]: # (You can then analyze the coverage report:)
-
-[//]: # ()
-[//]: # (```bash)
-
-[//]: # (go tool cover -func=coverage.out)
-
-[//]: # (```)
-
-[//]: # ()
-[//]: # (This will show the coverage percentage for each file.)
-
-
 ## Test Databases
 
 The following databases are spun up for functional tests:
