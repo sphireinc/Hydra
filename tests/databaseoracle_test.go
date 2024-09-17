@@ -1,5 +1,7 @@
 package tests
 
-func TestDatabaseOracle() {
+import "testing"
+
+func TestDatabaseOracle(t *testing.T) {
 	// TODO: Add tests for DatabaseOracle method
 }
