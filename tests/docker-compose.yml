@@ -11,11 +11,15 @@ services:
       MYSQL_PASSWORD: testpassword
     ports:
       - "3306:3306"
+    restart: always
+    platform: linux/amd64
     volumes:
       - mysql-data:/var/lib/mysql
       - ./migrations/mysql.sql:/docker-entrypoint-initdb.d/mysql.sql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "--silent"]
+    networks:
+      - hydra-net
 
   mariadb:
     image: mariadb:latest
@@ -27,71 +31,125 @@ services:
       MYSQL_PASSWORD: testpassword
     ports:
       - "3307:3306"
+    restart: always
+    platform: linux/amd64
     volumes:
       - mariadb-data:/var/lib/mysql
       - ./migrations/mariadb.sql:/docker-entrypoint-initdb.d/mariadb.sql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "--silent"]
+    networks:
+      - hydra-net
 
   postgres:
-    image: postgres:13
+    image: postgres:latest
     container_name: postgres-db
     environment:
       POSTGRES_DB: testdb
       POSTGRES_USER: testuser
       POSTGRES_PASSWORD: testpassword
     ports:
-      - "5432:5432"
+      - "5433:5432"
+    restart: always
+    platform: linux/amd64
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./migrations/postgres.sql:/docker-entrypoint-initdb.d/postgres.sql
+    networks:
+      - hydra-net
 
   mssql:
-    image: mcr.microsoft.com/mssql/server:2019-latest
-    container_name: mssql-db
     environment:
-      SA_PASSWORD: 'yourStrong(!)Password'
       ACCEPT_EULA: "Y"
+      SA_PASSWORD: yourStrongPassword
+      MSSQL_SA_PASSWORD: yourStrongPassword
+    # mssql server image isn't available for arm64 architecture, so we use azure-sql instead
+    image: mcr.microsoft.com/azure-sql-edge:1.0.4
+    restart: always
+    platform: linux/amd64
     ports:
       - "1433:1433"
     volumes:
       - mssql-data:/var/opt/mssql
       - ./migrations/mssql.sql:/tmp/mssql.sql
-    command: /bin/bash -c '/opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P yourStrong(!)Password -i /tmp/mssql.sql'
     healthcheck:
-      test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P yourStrong(!)Password -Q 'SELECT 1'"]
+      test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P example_123 -Q 'SELECT 1' || exit 1"]
+      interval: 10s
+      retries: 10
+      start_period: 10s
+      timeout: 3s
+    command: /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P yourStrongPassword -i /tmp/mssql.sql
+    networks:
+      - hydra-net
 
   oracle:
-    image: store/oracle/database-enterprise:12.2.0.1-slim
-    container_name: oracle-db
+    image: oracleinanutshell/oracle-xe-11g
+    container_name: oracle-xe
+    restart: always
+    platform: linux/amd64
     environment:
-      - ORACLE_SID=ORCLCDB
-      - ORACLE_PDB=ORCLPDB1
-      - ORACLE_PWD=oracle
+      - ORACLE_ALLOW_REMOTE=true
+      - ORACLE_PASSWORD=oracle
     ports:
       - "1521:1521"
     volumes:
-      - oracle-data:/opt/oracle/oradata
-      - ./migrations/oracle.sql:/opt/oracle/scripts/setup/oracle.sql
+      - oracle-data:/u01/app/oracle/oradata
+      - ./migrations/oracle.sql:/docker-entrypoint-initdb.d/oracle.sql
+    networks:
+      - hydra-net
 
   cockroachdb:
     image: cockroachdb/cockroach:v21.1.8
     container_name: cockroachdb-db
     command: start-single-node --insecure
+    restart: always
+    platform: linux/amd64
     ports:
       - "26257:26257"
       - "8080:8080"
     volumes:
       - cockroach-data:/cockroach/cockroach-data
       - ./migrations/cockroachdb.sql:/docker-entrypoint-initdb.d/cockroachdb.sql
+    networks:
+      - hydra-net
 
   sqlite:
-    image: nouchka/sqlite3
+    image: alpine/sqlite:latest
     container_name: sqlite-db
+    restart: always
+    platform: linux/amd64
+    stdin_open: true
+    tty: true
     volumes:
       - sqlite-data:/data
       - ./migrations/sqlite.sql:/docker-entrypoint-initdb.d/sqlite.sql
-    command: tail -f /dev/null
+    command: ["tail -f /dev/null"]
+    networks:
+      - hydra-net
+
+  test-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - MYSQL_URL=mysql://testuser:testpassword@tcp(mysql-db:3306)/testdb
+      - POSTGRES_URL=postgres://testuser:testpassword@postgres-db:5432/testdb?sslmode=disable
+      - MSSQL_URL=sqlserver://SA:yourStrong(!)Password@mssql-db:1433?database=testdb
+      - ORACLE_URL=oracle://testuser:oracle@oracle-db:1521/ORCLPDB1
+      - COCKROACH_URL=postgresql://root@cockroachdb-db:26257/testdb?sslmode=disable
+      - MARIADB_URL=mariadb://testuser:testpassword@tcp(mariadb-db:3307)/testdb
+      - SQLITE_URL=file::memory:?cache=shared
+    depends_on:
+      - mysql
+      - mariadb
+      - postgres
+      - mssql
+      - oracle
+      - cockroachdb
+      - sqlite
+    networks:
+      - hydra-net
+    command: ["go", "test", "-v", "./tests/..."]
 
 volumes:
   mysql-data:
@@ -101,3 +159,6 @@ volumes:
   oracle-data:
   cockroach-data:
   sqlite-data:
+
+networks:
+  hydra-net:
