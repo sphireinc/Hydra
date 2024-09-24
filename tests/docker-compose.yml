@@ -1,5 +1,7 @@
 version: '3.8'
 
+name: hydra-tests
+
 services:
   mysql:
     image: mysql:8.0
@@ -12,7 +14,6 @@ services:
     ports:
       - "3306:3306"
     restart: always
-    platform: linux/amd64
     volumes:
       - mysql-data:/var/lib/mysql
       - ./migrations/mysql.sql:/docker-entrypoint-initdb.d/mysql.sql
@@ -32,7 +33,6 @@ services:
     ports:
       - "3307:3306"
     restart: always
-    platform: linux/amd64
     volumes:
       - mariadb-data:/var/lib/mysql
       - ./migrations/mariadb.sql:/docker-entrypoint-initdb.d/mariadb.sql
@@ -51,7 +51,6 @@ services:
     ports:
       - "5433:5432"
     restart: always
-    platform: linux/amd64
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./migrations/postgres.sql:/docker-entrypoint-initdb.d/postgres.sql
@@ -64,8 +63,8 @@ services:
       SA_PASSWORD: yourStrongPassword
       MSSQL_SA_PASSWORD: yourStrongPassword
     # mssql server image isn't available for arm64 architecture, so we use azure-sql instead
-    image: mcr.microsoft.com/azure-sql-edge:1.0.4
-    restart: always
+    image: mcr.microsoft.com/azure-sql-edge:latest
+    user: root
     platform: linux/amd64
     ports:
       - "1433:1433"
@@ -78,7 +77,12 @@ services:
       retries: 10
       start_period: 10s
       timeout: 3s
-    command: /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P yourStrongPassword -i /tmp/mssql.sql
+    command: >
+      /bin/bash -c '
+        apt-get update && apt-get install -y unixodbc-dev mssql-tools && \
+        chmod +x /opt/mssql-tools/bin/sqlcmd && \
+        /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P yourStrongPassword -i /tmp/mssql.sql
+      '
     networks:
       - hydra-net
 
@@ -89,12 +93,14 @@ services:
     platform: linux/amd64
     environment:
       - ORACLE_ALLOW_REMOTE=true
-      - ORACLE_PASSWORD=oracle
+      - ORACLE_USER=test
+      - ORACLE_USERNAME=test
+      - ORACLE_PASSWORD=test
     ports:
       - "1521:1521"
     volumes:
       - oracle-data:/u01/app/oracle/oradata
-      - ./migrations/oracle.sql:/docker-entrypoint-initdb.d/oracle.sql
+      - ./migrations/oracle.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - hydra-net
 
@@ -129,8 +135,8 @@ services:
 
   test-runner:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: tests/Dockerfile
     environment:
       - MYSQL_URL=mysql://testuser:testpassword@tcp(mysql-db:3306)/testdb
       - POSTGRES_URL=postgres://testuser:testpassword@postgres-db:5432/testdb?sslmode=disable
