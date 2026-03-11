@@ -1,25 +1,4 @@
-2. Refactor the DB fetch layer to remove duplication
 
-Right now every DB file repeats almost the same code.
-	4.	Extract shared query-building and row-scanning helpers
-	•	common logic:
-	•	build SELECT * FROM <table> WHERE ...
-	•	prepare params
-	•	run query
-	•	read columns
-	•	scan first row into map[string]any
-	•	DB-specific code should only provide placeholder style and execution path.
-	5.	Introduce dialect abstraction
-	•	MySQL/MariaDB/SQLite use ?
-	•	PostgreSQL/Cockroach use $1
-	•	Oracle uses :1
-	•	MSSQL uses @p1
-	•	I want one shared builder that takes a placeholder formatter.
-	6.	Centralize “scan first row into map”
-	•	today every fetcher reimplements the same scan logic.
-	•	this is an ideal place for one helper, heavily unit tested.
-
-This will shrink the code a lot and make future fixes safer.
 
 ⸻
 
