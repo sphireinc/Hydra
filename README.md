@@ -70,16 +70,17 @@ data from the database and populates the fields:
 package main
 
 import (
-    "database/sql"
-    "github.com/sphireinc/Hydra"
-    _ "github.com/go-sql-driver/mysql"
+	"database/sql"
+
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/sphireinc/Hydra/hydra"
 )
 
 type Person struct {
-    Name        string `json:"name" hydra:"name"`
-    Age         int    `json:"age" hydra:"age"`
-    Email       string `json:"email" hydra:"email"`
-    hydra.Hydratable
+	Name  string `json:"name" hydra:"name"`
+	Age   int    `json:"age" hydra:"age"`
+	Email string `json:"email" hydra:"email"`
+	hydra.Hydratable
 }
 
 func createDBConnection() *sql.DB {
@@ -88,21 +89,21 @@ func createDBConnection() *sql.DB {
 }
 
 func main() {
-    // Create a database connection
-    db := createDBConnection() 
+	// Create a database connection
+	db := createDBConnection()
 
-    // Create an addressable Person instance and initialize the hydra.Hydratable struct
-    p := &Person{} 
-    p.Init(p)
+	// Create an addressable Person instance and initialize the hydra.Hydratable struct
+	p := &Person{}
+	p.Init(p)
 
-    // Create a map of where clauses
-    whereClause := map[string]interface{}{"id": "U6"} 
+	// Create a map of where clauses
+	whereClause := map[string]interface{}{"id": "U6"}
 
-    // Call Hydrate to populate the struct with data from the database
-    p.Hydrate(db, whereClause)
+	// Call Hydrate to populate the struct with data from the database
+	p.Hydrate(db, whereClause)
 
-    // Print the hydrated struct
-    fmt.Printf("Hydrated person: %+v\n", p)
+	// Print the hydrated struct
+	fmt.Printf("Hydrated person: %+v\n", p)
 }
 ```
 

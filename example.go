@@ -1,10 +1,11 @@
 package main
 
 import (
-	"Hydrator/hydra"
 	"database/sql"
 	"encoding/json"
 	"fmt"
+
+	"github.com/sphireinc/Hydra/hydra"
 )
 
 type Clan struct {

@@ -1,6 +1,6 @@
 package functional_tests
 
-import "Hydrator/hydra"
+import "github.com/sphireinc/Hydra/hydra"
 
 type Person struct {
 	Id          int    `json:"id" hydra:"id"`

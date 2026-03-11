@@ -62,35 +62,36 @@ In the test file, import the necessary packages and define the test cases. For e
 package tests
 
 import (
-    "Hydrator/hydra"
-    "database/sql"
-    "github.com/stretchr/testify/assert"
-    _ "github.com/go-sql-driver/mysql" 
+	"database/sql"
+
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/sphireinc/Hydra/hydra"
+	"github.com/stretchr/testify/assert"
 )
 
 type Person struct {
-    Name        string `json:"name" hydra:"name"`
-    Age         int    `json:"age" hydra:"age"`
-    Email       string `json:"email" hydra:"email"`
-    hydra.Hydratable
+	Name  string `json:"name" hydra:"name"`
+	Age   int    `json:"age" hydra:"age"`
+	Email string `json:"email" hydra:"email"`
+	hydra.Hydratable
 }
 
 func createDBConnection() *sql.DB {
-    db, _ := sql.Open("mysql", "user:password@tcp(mysql-db:3306)/testdb")
-    return db
+	db, _ := sql.Open("mysql", "user:password@tcp(mysql-db:3306)/testdb")
+	return db
 }
 
 func TestHydratePerson(t *testing.T) {
-    db := createDBConnection()
-    p := &Person{}
-    p.Init(p)
+	db := createDBConnection()
+	p := &Person{}
+	p.Init(p)
 
-    whereClause := map[string]interface{}{"id": "1"}
-    p.Hydrate(db, whereClause)
+	whereClause := map[string]interface{}{"id": "1"}
+	p.Hydrate(db, whereClause)
 
-    assert.Equal(t, "John Doe", p.Name)
-    assert.Equal(t, 30, p.Age)
-    assert.Equal(t, "john.doe@example.com", p.Email)
+	assert.Equal(t, "John Doe", p.Name)
+	assert.Equal(t, 30, p.Age)
+	assert.Equal(t, "john.doe@example.com", p.Email)
 }
 ```
 
