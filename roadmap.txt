@@ -1,22 +1,3 @@
-1. Fix build and module hygiene first
-
-These are blocking issues.
-	1.	Fix go.mod
-	•	go 1.26.1 is not realistic here and breaks local test execution in this environment.
-	•	I want to set it to a valid Go version the project actually targets and can build against.
-	•	I also want to check whether the module path should remain Hydrator or be changed to the GitHub import path used in the README.
-	2.	Normalize package/import story
-	•	README says github.com/sphireinc/Hydra
-	•	code imports Hydrator/hydra
-	•	repo root is Hydrator
-	•	this mismatch will confuse users and break install/use patterns.
-	•	I want to make module/import usage internally consistent.
-	3.	Remove obvious naming mistakes
-	•	database_sqllite.go / DatabaseSqlLite are misspelled.
-	•	I want to rename sqlite-related files/tests/types for clarity and long-term maintainability.
-
-⸻
-
 2. Refactor the DB fetch layer to remove duplication
 
 Right now every DB file repeats almost the same code.
