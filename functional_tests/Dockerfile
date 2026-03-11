@@ -11,11 +11,11 @@ COPY ../go.sum ./
 # Download Go module dependencies
 RUN go mod download
 
-# Copy the entire project from the context root, including the hydra package and tests
+# Copy the entire project from the context root, including the hydra package and functional_tests
 COPY ../ ./
 
 # Set environment variable for Go path
 ENV GO111MODULE=on
 
-# Run tests inside the hydra package
+# Run functional_tests inside the hydra package
 CMD ["go", "test", "-v", "./tests/..."]

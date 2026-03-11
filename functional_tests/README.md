@@ -14,7 +14,7 @@ First, clone the Hydra repository:
 
 ```bash
 git clone https://github.com/sphireinc/Hydra.git
-cd Hydra/tests
+cd Hydra/functional_tests
 ```
 
 ### Step 2: Set Up Docker Environment
@@ -37,7 +37,7 @@ This command will:
 Once the Docker environment is running, you can run the tests using the following command:
 
 ```bash
-go test -v ./tests
+go test -v ./functional_tests
 ```
 
 This will execute all tests across the various databases configured in the test suite.

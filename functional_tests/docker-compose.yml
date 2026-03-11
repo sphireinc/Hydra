@@ -1,6 +1,6 @@
 version: '3.8'
 
-name: hydra-tests
+name: hydra-functional_tests
 
 services:
   mysql:
@@ -136,7 +136,7 @@ services:
   test-runner:
     build:
       context: ..
-      dockerfile: tests/Dockerfile
+      dockerfile: /Dockerfile
     environment:
       - MYSQL_URL=mysql://testuser:testpassword@tcp(mysql-db:3306)/testdb
       - POSTGRES_URL=postgres://testuser:testpassword@postgres-db:5432/testdb?sslmode=disable
@@ -155,7 +155,7 @@ services:
       - sqlite
     networks:
       - hydra-net
-    command: ["go", "test", "-v", "./tests/..."]
+    command: ["go", "test", "-v", "./functional_tests/..."]
 
 volumes:
   mysql-data:
