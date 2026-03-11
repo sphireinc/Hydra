@@ -2,7 +2,7 @@ package hydra
 
 import "fmt"
 
-const debug = false
+var debug = false
 
 func p(a ...any) {
 	if debug {
