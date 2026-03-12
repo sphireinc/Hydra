@@ -1,7 +1,14 @@
+//go:build integration
+// +build integration
+
 package functional_tests
 
 import "testing"
 
 func TestDatabaseOracle(t *testing.T) {
-	// TODO: Add functional_tests for DatabaseOracle method
+	db := mustOpenSQLDB(t, "godror", "HYDRA_ORACLE_DSN")
+	defer db.Close()
+
+	runHydrateScenariosSQL(t, db, "oracle")
+	runFetchScenariosSQL(t, db, "oracle")
 }

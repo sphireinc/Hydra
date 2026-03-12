@@ -1,7 +1,14 @@
+//go:build integration
+// +build integration
+
 package functional_tests
 
 import "testing"
 
 func TestDatabaseMSSQL(t *testing.T) {
-	// TODO: Add functional_tests for DatabaseMSSQL method
+	db := mustOpenSQLDB(t, "sqlserver", "HYDRA_MSSQL_DSN")
+	defer db.Close()
+
+	runHydrateScenariosSQL(t, db, "mssql")
+	runFetchScenariosSQL(t, db, "mssql")
 }

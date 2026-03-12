@@ -1,21 +1,27 @@
-# Use the official Go image as a base
-FROM golang:1.23-alpine
+FROM golang:1.22-bookworm
 
-# Set the working directory inside the container
+ENV CGO_ENABLED=1 \
+    GO111MODULE=on \
+    DEBIAN_FRONTEND=noninteractive
+
 WORKDIR /app
 
-# Copy go.mod and go.sum files from the project root
-COPY ../go.mod ./
-COPY ../go.sum ./
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        bash \
+        build-essential \
+        ca-certificates \
+        curl \
+        git \
+        pkg-config \
+        sqlite3 \
+    && rm -rf /var/lib/apt/lists/*
 
-# Download Go module dependencies
+COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy the entire project from the context root, including the hydra package and functional_tests
-COPY ../ ./
+COPY . .
 
-# Set environment variable for Go path
-ENV GO111MODULE=on
+RUN chmod +x /app/functional_tests/wait-and-test.sh
 
-# Run functional_tests inside the hydra package
-CMD ["go", "test", "-v", "./tests/..."]
+CMD ["/bin/bash", "/app/functional_tests/wait-and-test.sh"]

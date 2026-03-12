@@ -1,0 +1,109 @@
+name: Bug report
+description: Report a defect in Hydra behavior, tests, CI, or database support
+title: "[Bug]: "
+labels:
+- bug
+- status:needs-triage
+  body:
+- type: markdown
+  attributes:
+  value: |
+  Thanks for filing a bug report.
+
+      Please include enough detail to reproduce the issue, especially if it is database-specific.
+
+- type: textarea
+  id: summary
+  attributes:
+  label: What happened?
+  description: Describe the bug and the observed behavior.
+  placeholder: Clear description of the problem
+  validations:
+  required: true
+
+- type: textarea
+  id: expected
+  attributes:
+  label: What did you expect to happen?
+  placeholder: Describe the expected behavior
+  validations:
+  required: true
+
+- type: dropdown
+  id: area
+  attributes:
+  label: Area
+  options:
+  - hydration
+  - fetch/query generation
+  - functional tests
+  - docker compose
+  - github actions / ci
+  - docs / examples
+  - release flow
+  - other
+  validations:
+  required: true
+
+- type: checkboxes
+  id: databases
+  attributes:
+  label: Database(s) affected
+  description: Select all that apply
+  options:
+  - label: SQLite
+  - label: MySQL
+  - label: MariaDB
+  - label: PostgreSQL
+  - label: CockroachDB
+  - label: MSSQL
+  - label: Oracle
+  - label: Unknown / not DB-specific
+
+- type: textarea
+  id: reproduction
+  attributes:
+  label: Reproduction steps
+  description: Include exact commands where possible
+  placeholder: |
+  1. Run ...
+  2. Change ...
+  3. Observe ...
+  validations:
+  required: true
+
+- type: textarea
+  id: test-commands
+  attributes:
+  label: Relevant test command(s)
+  description: Paste the exact command(s) you ran
+  placeholder: |
+  make test
+  make test-hydra
+  make test-func
+  docker compose up --build --abort-on-container-exit --exit-code-from test-runner
+
+- type: textarea
+  id: logs
+  attributes:
+  label: Logs or error output
+  render: text
+  placeholder: Paste logs, stack traces, SQL errors, or CI output
+
+- type: input
+  id: version
+  attributes:
+  label: Hydra version or commit
+  placeholder: e.g. v1.2.3 or commit SHA
+
+- type: input
+  id: go-version
+  attributes:
+  label: Go version
+  placeholder: e.g. go1.22.4
+
+- type: textarea
+  id: additional-context
+  attributes:
+  label: Additional context
+  placeholder: Anything else maintainers should know

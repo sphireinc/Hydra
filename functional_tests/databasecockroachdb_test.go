@@ -1,7 +1,17 @@
+//go:build integration
+// +build integration
+
 package functional_tests
 
-import "testing"
+import (
+	"context"
+	"testing"
+)
 
 func TestDatabaseCockroachDB(t *testing.T) {
-	// TODO: Add functional_tests for DatabaseCockroachDB method
+	conn := mustOpenPGXConn(t, "HYDRA_COCKROACHDB_DSN")
+	defer conn.Close(context.Background())
+
+	runHydrateScenariosPGX(t, conn, "cockroachdb")
+	runFetchScenariosPGX(t, conn, "cockroachdb")
 }

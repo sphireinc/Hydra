@@ -1,7 +1,14 @@
+//go:build integration
+// +build integration
+
 package functional_tests
 
 import "testing"
 
 func TestDatabaseSQLite(t *testing.T) {
-	// TODO: Add functional_tests for DatabaseSqlLite method
+	db := mustCreateSQLiteFunctionalDB(t)
+	defer db.Close()
+
+	runHydrateScenariosSQL(t, db, "sqlite")
+	runFetchScenariosSQL(t, db, "sqlite")
 }

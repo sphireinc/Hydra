@@ -1,7 +1,13 @@
+//go:build integration
+// +build integration
+
 package functional_tests
 
 import "testing"
 
-func TestFetch(t *testing.T) {
-	// TODO: Add functional_tests for Fetch method
+func TestFetchSQLite(t *testing.T) {
+	db := mustCreateSQLiteFunctionalDB(t)
+	defer db.Close()
+
+	runFetchScenariosSQL(t, db, "sqlite")
 }

@@ -1,7 +1,17 @@
+//go:build integration
+// +build integration
+
 package functional_tests
 
-import "testing"
+import (
+	"context"
+	"testing"
+)
 
 func TestDatabasePostgres(t *testing.T) {
-	// TODO: Add functional_tests for DatabasePostgres method
+	conn := mustOpenPGXConn(t, "HYDRA_POSTGRES_DSN")
+	defer conn.Close(context.Background())
+
+	runHydrateScenariosPGX(t, conn, "postgres")
+	runFetchScenariosPGX(t, conn, "postgres")
 }

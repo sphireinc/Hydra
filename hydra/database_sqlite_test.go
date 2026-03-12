@@ -1,23 +1,21 @@
 package hydra
 
-import "testing"
+import (
+	"errors"
+	"testing"
+)
 
 func TestFetchSQLite(t *testing.T) {
 	db := newTestSQLiteDB(t)
 	defer db.Close()
 
 	h := &Hydratable{}
-	result, err := h.fetchSQLite(db, "person", map[string]interface{}{"id": 1})
+	result, err := h.fetchSQLite(db, "person", []string{"id", "name"}, map[string]interface{}{"id": 1})
 	if err != nil {
-		t.Fatalf("fetchSQLite should succeed: %v", err)
+		t.Fatalf("fetchSQLite: %v", err)
 	}
-
-	if got, ok := result["id"].(int64); !ok || got != 1 {
-		t.Fatalf("unexpected id value: %#v", result["id"])
-	}
-
-	if got, ok := result["name"].(string); !ok || got != "Alice" {
-		t.Fatalf("unexpected name value: %#v", result["name"])
+	if result["id"].(int64) != 1 || result["name"].(string) != "Alice" {
+		t.Fatalf("unexpected result: %#v", result)
 	}
 }
 
@@ -26,12 +24,8 @@ func TestFetchSQLiteNoRows(t *testing.T) {
 	defer db.Close()
 
 	h := &Hydratable{}
-	result, err := h.fetchSQLite(db, "person", map[string]interface{}{"id": 999})
-	if err != nil {
-		t.Fatalf("fetchSQLite should not error on no rows: %v", err)
-	}
-
-	if len(result) != 0 {
-		t.Fatalf("expected empty result on no rows, got: %#v", result)
+	_, err := h.fetchSQLite(db, "person", []string{"id", "name"}, map[string]interface{}{"id": 999})
+	if !errors.Is(err, ErrNotFound) {
+		t.Fatalf("expected ErrNotFound, got: %v", err)
 	}
 }

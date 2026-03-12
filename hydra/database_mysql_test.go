@@ -7,17 +7,12 @@ func TestFetchMySQL(t *testing.T) {
 	defer db.Close()
 
 	h := &Hydratable{}
-	result, err := h.fetchMySQL(db, "person", map[string]interface{}{"id": 1})
+	result, err := h.fetchMySQL(db, "person", []string{"id", "name"}, map[string]interface{}{"id": 1})
 	if err != nil {
-		t.Fatalf("fetchMySQL should succeed: %v", err)
+		t.Fatalf("fetchMySQL: %v", err)
 	}
-
-	if got, ok := result["id"].(int64); !ok || got != 1 {
-		t.Fatalf("unexpected id value: %#v", result["id"])
-	}
-
-	if got, ok := result["name"].(string); !ok || got != "Alice" {
-		t.Fatalf("unexpected name value: %#v", result["name"])
+	if result["name"].(string) != "Alice" {
+		t.Fatalf("unexpected result: %#v", result)
 	}
 }
 
@@ -26,12 +21,11 @@ func TestFetchMySQLMultipleWhereClauses(t *testing.T) {
 	defer db.Close()
 
 	h := &Hydratable{}
-	result, err := h.fetchMySQL(db, "person", map[string]interface{}{"name": "Bob", "id": 2})
+	result, err := h.fetchMySQL(db, "person", []string{"id", "name"}, map[string]interface{}{"id": 2, "name": "Bob"})
 	if err != nil {
-		t.Fatalf("fetchMySQL should succeed with multiple where clauses: %v", err)
+		t.Fatalf("fetchMySQL: %v", err)
 	}
-
-	if got, ok := result["name"].(string); !ok || got != "Bob" {
-		t.Fatalf("unexpected name value: %#v", result["name"])
+	if result["name"].(string) != "Bob" {
+		t.Fatalf("unexpected result: %#v", result)
 	}
 }

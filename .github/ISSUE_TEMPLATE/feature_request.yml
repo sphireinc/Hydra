@@ -1,0 +1,78 @@
+name: Feature request
+description: Suggest a new feature or improvement
+title: "[Feature]: "
+labels:
+- enhancement
+- status:needs-triage
+  body:
+- type: markdown
+  attributes:
+  value: |
+  Thanks for the suggestion.
+
+      Please describe the user need, expected behavior, and any database-specific concerns.
+
+- type: textarea
+  id: problem
+  attributes:
+  label: What problem are you trying to solve?
+  placeholder: Describe the pain point or missing capability
+  validations:
+  required: true
+
+- type: textarea
+  id: proposal
+  attributes:
+  label: Proposed solution
+  placeholder: Describe what you want Hydra to do
+  validations:
+  required: true
+
+- type: textarea
+  id: alternatives
+  attributes:
+  label: Alternatives considered
+  placeholder: Describe any workarounds or alternatives you considered
+
+- type: checkboxes
+  id: databases
+  attributes:
+  label: Database(s) this affects
+  options:
+  - label: SQLite
+  - label: MySQL
+  - label: MariaDB
+  - label: PostgreSQL
+  - label: CockroachDB
+  - label: MSSQL
+  - label: Oracle
+  - label: All / general API
+
+- type: dropdown
+  id: area
+  attributes:
+  label: Area
+  options:
+  - hydration
+  - fetch/query generation
+  - functional tests
+  - docker compose
+  - github actions / ci
+  - docs / examples
+  - release flow
+  - other
+  validations:
+  required: true
+
+- type: textarea
+  id: test-impact
+  attributes:
+  label: Test impact
+  description: What should be covered by `make test`, `make test-hydra`, or `make test-func`?
+  placeholder: Describe the expected test coverage for this feature
+
+- type: textarea
+  id: additional-context
+  attributes:
+  label: Additional context
+  placeholder: Links, examples, prior art, or implementation notes

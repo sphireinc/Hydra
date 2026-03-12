@@ -1,54 +1,88 @@
 package hydra
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
 )
 
-// Fetch hydrates the object with data from the database
-// @param db The database connection
-// @param tableName The name of the table to fetch data from
-// @param whereClauses The where clauses to filter the data
-// @return map[string]interface{} The hydrated data
-// @return error The error if any occurred
-func (h *Hydratable) Fetch(db any, tableName string, whereClauses map[string]interface{}) (map[string]interface{}, error) {
-	p("Fetching data from database")
-	switch db := db.(type) {
+type fetchRoute string
+
+const (
+	fetchRouteMySQL       fetchRoute = "mysql"
+	fetchRouteSQLite      fetchRoute = "sqlite"
+	fetchRouteMSSQL       fetchRoute = "mssql"
+	fetchRouteMariaDB     fetchRoute = "mariadb"
+	fetchRouteOracle      fetchRoute = "oracle"
+	fetchRoutePostgres    fetchRoute = "postgres"
+	fetchRouteCockroachDB fetchRoute = "cockroachdb"
+)
+
+func (h *Hydratable) resolveFetchRoute(db any) (fetchRoute, error) {
+	switch db.(type) {
 	case *sql.DB:
 		switch h.XDBTypeOverride {
 		case "sqlite":
-			p("Fetching data from SQLite")
-			return h.fetchSQLite(db, tableName, whereClauses)
+			return fetchRouteSQLite, nil
 		case "mssql":
-			p("Fetching data from MSSQL")
-			return h.fetchMSSQL(db, tableName, whereClauses)
+			return fetchRouteMSSQL, nil
 		case "mariadb":
-			p("Fetching data from MariaDB")
-			return h.fetchMariaDB(db, tableName, whereClauses)
+			return fetchRouteMariaDB, nil
 		case "oracle":
-			p("Fetching data from Oracle")
-			return h.fetchOracle(db, tableName, whereClauses)
-		case "mysql":
+			return fetchRouteOracle, nil
+		case "", "mysql":
+			return fetchRouteMySQL, nil
 		default:
-			p("Fetching data from MySQL")
-			return h.fetchMySQL(db, tableName, whereClauses)
+			return "", fmt.Errorf("unsupported sql.DB override: %s", h.XDBTypeOverride)
 		}
 	case *pgx.Conn:
 		switch h.XDBTypeOverride {
 		case "cockroachdb":
-			p("Fetching data from CockroachDB")
-			return h.fetchCockroachDB(db, tableName, whereClauses)
-		case "postgres":
+			return fetchRouteCockroachDB, nil
+		case "", "postgres":
+			return fetchRoutePostgres, nil
 		default:
-			p("Fetching data from PostgreSQL")
-			return h.fetchPostgres(db, tableName, whereClauses)
+			return "", fmt.Errorf("unsupported pgx override: %s", h.XDBTypeOverride)
 		}
 	default:
-		err := fmt.Errorf("unsupported database type: %T", db)
-		p("Unsupported database type:", err)
+		return "", fmt.Errorf("unsupported database type: %T", db)
+	}
+}
+
+func (h *Hydratable) Fetch(db any, tableName string, columns []string, whereClauses map[string]interface{}) (map[string]interface{}, error) {
+	return h.FetchContext(context.Background(), db, tableName, columns, whereClauses)
+}
+
+func (h *Hydratable) FetchContext(ctx context.Context, db any, tableName string, columns []string, whereClauses map[string]interface{}) (map[string]interface{}, error) {
+	route, err := h.resolveFetchRoute(db)
+	if err != nil {
 		return nil, err
 	}
+
+	switch typed := db.(type) {
+	case *sql.DB:
+		switch route {
+		case fetchRouteSQLite:
+			return h.fetchSQLite(ctx, typed, tableName, columns, whereClauses)
+		case fetchRouteMSSQL:
+			return h.fetchMSSQL(ctx, typed, tableName, columns, whereClauses)
+		case fetchRouteMariaDB:
+			return h.fetchMariaDB(ctx, typed, tableName, columns, whereClauses)
+		case fetchRouteOracle:
+			return h.fetchOracle(ctx, typed, tableName, columns, whereClauses)
+		case fetchRouteMySQL:
+			return h.fetchMySQL(ctx, typed, tableName, columns, whereClauses)
+		}
+	case *pgx.Conn:
+		switch route {
+		case fetchRouteCockroachDB:
+			return h.fetchCockroachDB(ctx, typed, tableName, columns, whereClauses)
+		case fetchRoutePostgres:
+			return h.fetchPostgres(ctx, typed, tableName, columns, whereClauses)
+		}
+	}
+
 	return nil, fmt.Errorf("unsupported database type: %T", db)
 }

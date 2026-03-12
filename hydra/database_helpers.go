@@ -12,52 +12,56 @@ import (
 
 type placeholderFormatter func(index int) string
 
-func questionPlaceholder(_ int) string {
-	return "?"
-}
+func questionPlaceholder(_ int) string   { return "?" }
+func dollarPlaceholder(index int) string { return fmt.Sprintf("$%d", index) }
+func colonPlaceholder(index int) string  { return fmt.Sprintf(":%d", index) }
+func atPPlaceholder(index int) string    { return fmt.Sprintf("@p%d", index) }
 
-func dollarPlaceholder(index int) string {
-	return fmt.Sprintf("$%d", index)
-}
-
-func colonPlaceholder(index int) string {
-	return fmt.Sprintf(":%d", index)
-}
-
-func atPPlaceholder(index int) string {
-	return fmt.Sprintf("@p%d", index)
-}
-
-func buildSelectQuery(tableName string, whereClauses map[string]interface{}, format placeholderFormatter) (string, []interface{}) {
-	query := fmt.Sprintf("SELECT * FROM %s WHERE ", tableName)
-	p("Query:", query)
+func buildSelectQuery(tableName string, columns []string, whereClauses map[string]interface{}, format placeholderFormatter) (string, []interface{}, error) {
+	if err := validateIdentifier(tableName); err != nil {
+		return "", nil, err
+	}
+	if len(columns) == 0 {
+		return "", nil, fmt.Errorf("at least one selected column is required")
+	}
+	for _, column := range columns {
+		if err := validateIdentifier(column); err != nil {
+			return "", nil, err
+		}
+	}
+	if len(whereClauses) == 0 {
+		return "", nil, ErrEmptyWhereClause
+	}
 
 	keys := make([]string, 0, len(whereClauses))
 	for column := range whereClauses {
+		if err := validateIdentifier(column); err != nil {
+			return "", nil, err
+		}
 		keys = append(keys, column)
 	}
 	sort.Strings(keys)
 
 	params := make([]interface{}, 0, len(keys))
 	conditions := make([]string, 0, len(keys))
-
 	for i, column := range keys {
 		conditions = append(conditions, fmt.Sprintf("%s = %s", column, format(i+1)))
 		params = append(params, whereClauses[column])
 	}
 
-	query += strings.Join(conditions, " AND ")
-	p("Query with conditions:", query)
-	p("Query params:", params)
+	query := fmt.Sprintf(
+		"SELECT %s FROM %s WHERE %s",
+		strings.Join(columns, ", "),
+		tableName,
+		strings.Join(conditions, " AND "),
+	)
 
-	return query, params
+	return query, params, nil
 }
 
-func queryFirstRowSQL(db *sql.DB, query string, params []interface{}) (map[string]interface{}, error) {
-	rows, err := db.Query(query, params...)
-	p("Rows:", rows)
+func queryFirstRowSQL(ctx context.Context, db *sql.DB, query string, params []interface{}) (map[string]interface{}, error) {
+	rows, err := db.QueryContext(ctx, query, params...)
 	if err != nil {
-		p("Error executing query:", err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -67,42 +71,42 @@ func queryFirstRowSQL(db *sql.DB, query string, params []interface{}) (map[strin
 
 func scanSQLRowsFirst(rows *sql.Rows) (map[string]interface{}, error) {
 	columns, err := rows.Columns()
-	p("Columns:", columns)
 	if err != nil {
-		p("Error getting columns:", err)
 		return nil, err
 	}
 
-	result := make(map[string]interface{})
 	values := make([]interface{}, len(columns))
 	valuePtrs := make([]interface{}, len(columns))
 	for i := range values {
 		valuePtrs[i] = &values[i]
 	}
 
-	if rows.Next() {
-		if err := rows.Scan(valuePtrs...); err != nil {
+	if !rows.Next() {
+		if err := rows.Err(); err != nil {
 			return nil, err
 		}
+		return nil, ErrNotFound
+	}
 
-		for i, col := range columns {
-			result[col] = values[i]
-		}
+	if err := rows.Scan(valuePtrs...); err != nil {
+		return nil, err
+	}
+
+	result := make(map[string]interface{}, len(columns))
+	for i, col := range columns {
+		result[col] = values[i]
 	}
 
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 
-	p("Result:", result)
 	return result, nil
 }
 
 func queryFirstRowPGX(ctx context.Context, db *pgx.Conn, query string, params []interface{}) (map[string]interface{}, error) {
 	rows, err := db.Query(ctx, query, params...)
-	p("Rows:", rows)
 	if err != nil {
-		p("Error executing query:", err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -116,29 +120,32 @@ func scanPGXRowsFirst(rows pgx.Rows) (map[string]interface{}, error) {
 	for i, field := range fieldDescriptions {
 		columns[i] = field.Name
 	}
-	p("Columns:", columns)
 
-	result := make(map[string]interface{})
 	values := make([]interface{}, len(columns))
 	valuePtrs := make([]interface{}, len(columns))
 	for i := range values {
 		valuePtrs[i] = &values[i]
 	}
 
-	if rows.Next() {
-		if err := rows.Scan(valuePtrs...); err != nil {
+	if !rows.Next() {
+		if err := rows.Err(); err != nil {
 			return nil, err
 		}
+		return nil, ErrNotFound
+	}
 
-		for i, col := range columns {
-			result[col] = values[i]
-		}
+	if err := rows.Scan(valuePtrs...); err != nil {
+		return nil, err
+	}
+
+	result := make(map[string]interface{}, len(columns))
+	for i, col := range columns {
+		result[col] = values[i]
 	}
 
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 
-	p("Result:", result)
 	return result, nil
 }

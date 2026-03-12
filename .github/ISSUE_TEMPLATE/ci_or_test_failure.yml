@@ -1,0 +1,69 @@
+name: CI or test failure
+description: Report a failing workflow, Docker Compose issue, or test regression
+title: "[CI/Test]: "
+labels:
+  - ci
+  - tests
+  - status:needs-triage
+body:
+  - type: textarea
+    id: failure
+    attributes:
+      label: What failed?
+      placeholder: Describe the failing workflow, compose step, or test target
+    validations:
+      required: true
+
+  - type: dropdown
+    id: failing-target
+    attributes:
+      label: Failing target
+      options:
+        - make test
+        - make test-hydra
+        - make test-func
+        - GitHub Actions unit-tests job
+        - GitHub Actions functional-tests job
+        - docker compose startup
+        - other
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: databases
+    attributes:
+      label: Databases involved
+      options:
+        - label: SQLite
+        - label: MySQL
+        - label: MariaDB
+        - label: PostgreSQL
+        - label: CockroachDB
+        - label: MSSQL
+        - label: Oracle
+        - label: Not database-specific
+
+  - type: textarea
+    id: exact-command
+    attributes:
+      label: Exact command run
+      render: bash
+      placeholder: |
+        make test-func
+        ./run_func_tests.sh
+        docker compose up --build --abort-on-container-exit --exit-code-from test-runner
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      render: text
+      placeholder: Paste the failing test output or workflow log excerpt
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional notes
+      placeholder: Any recent changes, suspected cause, or environment details

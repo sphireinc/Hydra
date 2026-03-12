@@ -2,44 +2,72 @@ package main
 
 import (
 	"database/sql"
-	"encoding/json"
+	"errors"
 	"fmt"
 
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/sphireinc/Hydra/hydra"
 )
 
-type Clan struct {
-	ClanAcc     string `json:"clan_acc" hydra:"clan_acc"`
-	ID          string `json:"id" hydra:"id"`
-	PreviousId  string `json:"name" hydra:"previous_id"`
-	Description string `json:"age" hydra:"description"`
-	Author      string `json:"author" hydra:"author"`
-	Comment     string `json:"comment" hydra:"comment"`
-	Created     string `json:"created" hydra:"created"`
-	Updated     string `json:"updated" hydra:"updated"`
+type ExamplePerson struct {
+	ID    int    `hydra:"id,pk"`
+	Email string `hydra:"email,lookup"`
+	Name  string `hydra:"name"`
+
 	hydra.Hydratable
 }
 
-// Implement the fmt.Stringer interface to output JSON by default
-func (c Clan) String() string {
-	// Marshal the struct to JSON
-	jsonData, err := json.Marshal(c)
-	if err != nil {
-		return fmt.Sprintf("Error marshaling to JSON: %v", err)
-	}
-	return string(jsonData)
+func (ExamplePerson) HydraTableName() string {
+	return "person"
 }
 
-func example() {
-	p := &Clan{}
-	p.Init(p)
-
-	// test using a publicly available MySQL database
-	db, err := sql.Open("mysql", "rfamro:@tcp(mysql-rfam-public.ebi.ac.uk:4497)/Rfam")
+func runExample() error {
+	db, err := sql.Open("sqlite3", ":memory:")
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("open sqlite db: %w", err)
+	}
+	defer db.Close()
+
+	_, err = db.Exec(`
+		CREATE TABLE person (
+			id INTEGER PRIMARY KEY,
+			email TEXT NOT NULL,
+			name TEXT NOT NULL
+		);
+
+		INSERT INTO person (id, email, name)
+		VALUES
+			(1, 'alice@example.com', 'Alice'),
+			(2, 'bob@example.com', 'Bob');
+	`)
+	if err != nil {
+		return fmt.Errorf("seed sqlite db: %w", err)
 	}
 
-	fmt.Println(p.Hydrate(db, map[string]interface{}{"id": "U6"}))
-	fmt.Println("res", p)
+	person := &ExamplePerson{}
+	person.Init(person)
+	person.XDBTypeOverride = "sqlite"
+
+	if err := person.HydrateByPrimaryKey(db, 1); err != nil {
+		return fmt.Errorf("hydrate by primary key: %w", err)
+	}
+
+	fmt.Printf("loaded by pk: id=%d email=%s name=%s\n", person.ID, person.Email, person.Name)
+
+	lookup := &ExamplePerson{
+		Email: "bob@example.com",
+	}
+	lookup.Init(lookup)
+	lookup.XDBTypeOverride = "sqlite"
+
+	if err := lookup.HydrateByLookup(db); err != nil {
+		if errors.Is(err, hydra.ErrNotFound) {
+			return fmt.Errorf("hydrate by lookup: %w", err)
+		}
+		return fmt.Errorf("hydrate by lookup: %w", err)
+	}
+
+	fmt.Printf("loaded by lookup: id=%d email=%s name=%s\n", lookup.ID, lookup.Email, lookup.Name)
+
+	return nil
 }

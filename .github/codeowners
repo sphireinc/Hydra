@@ -1,0 +1,25 @@
+# Default owners for the whole repository
+* @sphireinc @nsa-yoda
+
+# Core library code
+/hydra/ @sphireinc @nsa-yoda
+/go.mod @sphireinc @nsa-yoda
+/go.sum @sphireinc @nsa-yoda
+
+# Functional/integration test infrastructure
+/functional_tests/ @sphireinc @nsa-yoda
+/run_func_tests.sh @sphireinc @nsa-yoda
+/Makefile @sphireinc @nsa-yoda
+
+# CI/CD and repository automation
+/.github/workflows/ @sphireinc @nsa-yoda
+/.github/labels.yml @sphireinc @nsa-yoda
+/.github/PULL_REQUEST_TEMPLATE.md @sphireinc @nsa-yoda
+/.github/pull_request_template.md @sphireinc @nsa-yoda
+/.github/ISSUE_TEMPLATE/ @sphireinc @nsa-yoda
+
+# Docs and examples
+/README.md @sphireinc @nsa-yoda
+/docs/ @sphireinc @nsa-yoda
+/example.go @sphireinc @nsa-yoda
+/main.go @sphireinc @nsa-yoda

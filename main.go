@@ -1,5 +1,11 @@
 package main
 
+import (
+	"log"
+)
+
 func main() {
-	example()
+	if err := runExample(); err != nil {
+		log.Fatal(err)
+	}
 }

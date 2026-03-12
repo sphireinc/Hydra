@@ -1,11 +1,9 @@
-version: '3.8'
-
-name: hydra-functional_tests
+name: hydra-functional-tests
 
 services:
   mysql:
-    image: mysql:8.0
-    container_name: mysql-db
+    image: mysql:8.4
+    container_name: hydra-mysql
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
       MYSQL_DATABASE: testdb
@@ -13,149 +11,207 @@ services:
       MYSQL_PASSWORD: testpassword
     ports:
       - "3306:3306"
-    restart: always
     volumes:
       - mysql-data:/var/lib/mysql
-      - ./migrations/mysql.sql:/docker-entrypoint-initdb.d/mysql.sql
+      - ./migrations/mysql.sql:/docker-entrypoint-initdb.d/001-mysql.sql:ro
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "--silent"]
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
     networks:
       - hydra-net
 
   mariadb:
-    image: mariadb:latest
-    container_name: mariadb-db
+    image: mariadb:11
+    container_name: hydra-mariadb
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: testdb
-      MYSQL_USER: testuser
-      MYSQL_PASSWORD: testpassword
+      MARIADB_ROOT_PASSWORD: rootpassword
+      MARIADB_DATABASE: testdb
+      MARIADB_USER: testuser
+      MARIADB_PASSWORD: testpassword
     ports:
       - "3307:3306"
-    restart: always
     volumes:
       - mariadb-data:/var/lib/mysql
-      - ./migrations/mariadb.sql:/docker-entrypoint-initdb.d/mariadb.sql
+      - ./migrations/mariadb.sql:/docker-entrypoint-initdb.d/001-mariadb.sql:ro
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "--silent"]
+      test: ["CMD-SHELL", "mariadb-admin ping -h 127.0.0.1 -uroot -p$$MARIADB_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
     networks:
       - hydra-net
 
   postgres:
-    image: postgres:latest
-    container_name: postgres-db
+    image: postgres:16
+    container_name: hydra-postgres
     environment:
       POSTGRES_DB: testdb
       POSTGRES_USER: testuser
       POSTGRES_PASSWORD: testpassword
     ports:
       - "5433:5432"
-    restart: always
     volumes:
       - postgres-data:/var/lib/postgresql/data
-      - ./migrations/postgres.sql:/docker-entrypoint-initdb.d/postgres.sql
+      - ./migrations/postgres.sql:/docker-entrypoint-initdb.d/001-postgres.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
     networks:
       - hydra-net
 
   mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: hydra-mssql
+    platform: linux/amd64
     environment:
       ACCEPT_EULA: "Y"
-      SA_PASSWORD: yourStrongPassword
-      MSSQL_SA_PASSWORD: yourStrongPassword
-    # mssql server image isn't available for arm64 architecture, so we use azure-sql instead
-    image: mcr.microsoft.com/azure-sql-edge:latest
-    user: root
-    platform: linux/amd64
+      MSSQL_SA_PASSWORD: "YourStrongPassword!123"
+      MSSQL_PID: "Developer"
     ports:
       - "1433:1433"
     volumes:
       - mssql-data:/var/opt/mssql
-      - ./migrations/mssql.sql:/tmp/mssql.sql
     healthcheck:
-      test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P example_123 -Q 'SELECT 1' || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -Q \"SELECT 1\" || exit 1"
+        ]
       interval: 10s
-      retries: 10
-      start_period: 10s
-      timeout: 3s
+      timeout: 5s
+      retries: 30
+      start_period: 40s
+    networks:
+      - hydra-net
+
+  mssql-init:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: hydra-mssql-init
+    platform: linux/amd64
+    depends_on:
+      mssql:
+        condition: service_healthy
+    environment:
+      MSSQL_SA_PASSWORD: "YourStrongPassword!123"
+    volumes:
+      - ./migrations/mssql.sql:/migrations/mssql.sql:ro
+    entrypoint: ["/bin/bash", "-lc"]
     command: >
-      /bin/bash -c '
-        apt-get update && apt-get install -y unixodbc-dev mssql-tools && \
-        chmod +x /opt/mssql-tools/bin/sqlcmd && \
-        /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P yourStrongPassword -i /tmp/mssql.sql
-      '
+      set -euo pipefail;
+      /opt/mssql-tools18/bin/sqlcmd -C -S mssql -U sa -P "$${MSSQL_SA_PASSWORD}" -Q "IF DB_ID(N'testdb') IS NULL CREATE DATABASE testdb;";
+      /opt/mssql-tools18/bin/sqlcmd -C -S mssql -U sa -P "$${MSSQL_SA_PASSWORD}" -d testdb -i /migrations/mssql.sql
+    restart: "no"
     networks:
       - hydra-net
 
   oracle:
-    image: oracleinanutshell/oracle-xe-11g
-    container_name: oracle-xe
-    restart: always
+    image: gvenzl/oracle-xe:21-slim
+    container_name: hydra-oracle
     platform: linux/amd64
     environment:
-      - ORACLE_ALLOW_REMOTE=true
-      - ORACLE_USER=test
-      - ORACLE_USERNAME=test
-      - ORACLE_PASSWORD=test
+      ORACLE_PASSWORD: "oraclepassword"
+      APP_USER: "hydra"
+      APP_USER_PASSWORD: "hydrapassword"
     ports:
       - "1521:1521"
     volumes:
-      - oracle-data:/u01/app/oracle/oradata
-      - ./migrations/oracle.sql:/docker-entrypoint-initdb.d/init.sql
+      - oracle-data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+    networks:
+      - hydra-net
+
+  oracle-init:
+    image: gvenzl/oracle-xe:21-slim
+    container_name: hydra-oracle-init
+    platform: linux/amd64
+    depends_on:
+      oracle:
+        condition: service_healthy
+    volumes:
+      - ./migrations/oracle.sql:/migrations/oracle.sql:ro
+    entrypoint: ["/bin/bash", "-lc"]
+    command: >
+      set -euo pipefail;
+      sqlplus -s hydra/hydrapassword@//oracle:1521/XEPDB1 @/migrations/oracle.sql
+    restart: "no"
     networks:
       - hydra-net
 
   cockroachdb:
-    image: cockroachdb/cockroach:v21.1.8
-    container_name: cockroachdb-db
-    command: start-single-node --insecure
-    restart: always
-    platform: linux/amd64
+    image: cockroachdb/cockroach:v25.3.3
+    container_name: hydra-cockroachdb
+    command: start-single-node --insecure --listen-addr=0.0.0.0 --http-addr=0.0.0.0:8080
     ports:
       - "26257:26257"
       - "8080:8080"
     volumes:
       - cockroach-data:/cockroach/cockroach-data
-      - ./migrations/cockroachdb.sql:/docker-entrypoint-initdb.d/cockroachdb.sql
+    healthcheck:
+      test: ["CMD-SHELL", "cockroach sql --insecure --host=localhost:26257 --execute='SELECT 1' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
     networks:
       - hydra-net
 
-  sqlite:
-    image: alpine/sqlite:latest
-    container_name: sqlite-db
-    restart: always
-    platform: linux/amd64
-    stdin_open: true
-    tty: true
+  cockroachdb-init:
+    image: cockroachdb/cockroach:v25.3.3
+    container_name: hydra-cockroachdb-init
+    depends_on:
+      cockroachdb:
+        condition: service_healthy
     volumes:
-      - sqlite-data:/data
-      - ./migrations/sqlite.sql:/docker-entrypoint-initdb.d/sqlite.sql
-    command: ["tail -f /dev/null"]
+      - ./migrations/cockroachdb.sql:/migrations/cockroachdb.sql:ro
+    entrypoint: ["/bin/sh", "-ec"]
+    command: |
+      cockroach sql --insecure --host=cockroachdb:26257 --execute="CREATE DATABASE IF NOT EXISTS testdb;"
+      cockroach sql --insecure --host=cockroachdb:26257 --database=testdb --file=/migrations/cockroachdb.sql
+    restart: "no"
     networks:
       - hydra-net
 
   test-runner:
     build:
       context: ..
-      dockerfile: /Dockerfile
-    environment:
-      - MYSQL_URL=mysql://testuser:testpassword@tcp(mysql-db:3306)/testdb
-      - POSTGRES_URL=postgres://testuser:testpassword@postgres-db:5432/testdb?sslmode=disable
-      - MSSQL_URL=sqlserver://SA:yourStrong(!)Password@mssql-db:1433?database=testdb
-      - ORACLE_URL=oracle://testuser:oracle@oracle-db:1521/ORCLPDB1
-      - COCKROACH_URL=postgresql://root@cockroachdb-db:26257/testdb?sslmode=disable
-      - MARIADB_URL=mariadb://testuser:testpassword@tcp(mariadb-db:3307)/testdb
-      - SQLITE_URL=file::memory:?cache=shared
+      dockerfile: functional_tests/Dockerfile
+    container_name: hydra-test-runner
     depends_on:
-      - mysql
-      - mariadb
-      - postgres
-      - mssql
-      - oracle
-      - cockroachdb
-      - sqlite
+      mysql:
+        condition: service_healthy
+      mariadb:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      mssql-init:
+        condition: service_completed_successfully
+      oracle-init:
+        condition: service_completed_successfully
+      cockroachdb-init:
+        condition: service_completed_successfully
+    environment:
+      CGO_ENABLED: "1"
+      HYDRA_MYSQL_DSN: "testuser:testpassword@tcp(mysql:3306)/testdb?parseTime=true"
+      HYDRA_MARIADB_DSN: "testuser:testpassword@tcp(mariadb:3306)/testdb?parseTime=true"
+      HYDRA_POSTGRES_DSN: "postgres://testuser:testpassword@postgres:5432/testdb?sslmode=disable"
+      HYDRA_MSSQL_DSN: "sqlserver://sa:YourStrongPassword!123@mssql:1433?database=testdb&encrypt=disable"
+      HYDRA_ORACLE_DSN: "hydra/hydrapassword@oracle:1521/XEPDB1"
+      HYDRA_COCKROACHDB_DSN: "postgres://root@cockroachdb:26257/testdb?sslmode=disable"
     networks:
       - hydra-net
-    command: ["go", "test", "-v", "./functional_tests/..."]
+    entrypoint: ["/bin/bash", "/app/functional_tests/wait-and-test.sh"]
 
 volumes:
   mysql-data:
@@ -164,7 +220,7 @@ volumes:
   mssql-data:
   oracle-data:
   cockroach-data:
-  sqlite-data:
 
 networks:
   hydra-net:
+    driver: bridge

@@ -1,113 +1,66 @@
 # Functional Testing Suite
 
-This folder contains a set of functional tests for the **Sphire Hydra** library. The tests are 
-written in Go and use the `testify` package for assertions.
+This directory contains executable integration tests for Hydra.
 
-## Running the Tests
+## How the suite is separated from unit tests
 
-To run the tests, we will use Docker to spin up containers with the required databases. This ensures 
-consistency across environments and makes it easy to test against multiple databases.
+These tests are behind the `integration` build tag, so they do not run during normal unit-test execution.
 
-### Step 1: Clone the Repository
-
-First, clone the Hydra repository:
+Run them explicitly with:
 
 ```bash
-git clone https://github.com/sphireinc/Hydra.git
-cd Hydra/functional_tests
+go test -tags=integration -v ./functional_tests/...
 ```
 
-### Step 2: Set Up Docker Environment
+## What the functional suite covers
 
-To run the functional tests, you need to spin up Docker containers for all supported databases (MySQL, PostgreSQL, SQLite, MSSQL, Oracle, MariaDB, CockroachDB). The docker-compose.yml file in this directory has already been configured to set up these databases.
+The suite performs real end-to-end checks for:
+- hydrating a Person by ID
+- hydrating an Address by ID
+- verifying expected field values from seeded data
+- verifying ErrNotFound when a row is missing
+- validating that the migration/seed data matches the test assumptions
 
-Start the Docker environment with:
+## SQLite
+
+SQLite is fully local and uses the actual migrations/sqlite.sql file to create and seed an in-memory database.
+
+This makes the SQLite functional tests executable without Docker or external services.
+
+## External databases
+
+The other functional tests are real integration tests, but they only run when the appropriate DSN environment 
+variable is present. Otherwise they are skipped.
+
+Supported environment variables:
+- HYDRA_MYSQL_DSN
+- HYDRA_MARIADB_DSN
+- HYDRA_MSSQL_DSN
+- HYDRA_ORACLE_DSN
+- HYDRA_POSTGRES_DSN
+- HYDRA_COCKROACHDB_DSN
+
+Examples:
 
 ```bash
-docker-compose up -d
+HYDRA_MYSQL_DSN='testuser:testpassword@tcp(127.0.0.1:3306)/testdb' \
+go test -tags=integration -v ./functional_tests -run TestDatabaseMySQL
+
+
+HYDRA_POSTGRES_DSN='postgres://testuser:testpassword@127.0.0.1:5433/testdb?sslmode=disable' \
+go test -tags=integration -v ./functional_tests -run TestDatabasePostgres
 ```
 
-This command will:
 
-- Spin up the necessary databases.
-- Set up each container with test data via the respective SQL migration files (./migrations directory).
+## Notes on table naming
 
-### Step 3: Run the Tests
+The migrations create Person and Addresses tables. The functional test structs implement `HydraTableName()` so the
+hydrator targets those exact table names.
 
-Once the Docker environment is running, you can run the tests using the following command:
+Seed expectations validated by the suite
 
-```bash
-go test -v ./functional_tests
-```
-
-This will execute all tests across the various databases configured in the test suite.
-
-### Step 4: Stop the Docker Environment
-
-After running the tests, you can stop the Docker containers with:
-
-```bash
-docker-compose down
-```
-
-This will tear down the test environment.
-
-## Test Structure
-
-To add a new test, create a new file in the tests directory with a name that describes the test. For example, if you want to test the Hydrate method of the Person struct, you can create a file named TestHydrate.go.
-
-In the test file, import the necessary packages and define the test cases. For example:
-
-```go
-package tests
-
-import (
-	"database/sql"
-
-	_ "github.com/go-sql-driver/mysql"
-	"github.com/sphireinc/Hydra/hydra"
-	"github.com/stretchr/testify/assert"
-)
-
-type Person struct {
-	Name  string `json:"name" hydra:"name"`
-	Age   int    `json:"age" hydra:"age"`
-	Email string `json:"email" hydra:"email"`
-	hydra.Hydratable
-}
-
-func createDBConnection() *sql.DB {
-	db, _ := sql.Open("mysql", "user:password@tcp(mysql-db:3306)/testdb")
-	return db
-}
-
-func TestHydratePerson(t *testing.T) {
-	db := createDBConnection()
-	p := &Person{}
-	p.Init(p)
-
-	whereClause := map[string]interface{}{"id": "1"}
-	p.Hydrate(db, whereClause)
-
-	assert.Equal(t, "John Doe", p.Name)
-	assert.Equal(t, 30, p.Age)
-	assert.Equal(t, "john.doe@example.com", p.Email)
-}
-```
-
-## Test Databases
-
-The following databases are spun up for functional tests:
-
-- MySQL: Port 3306
-- MariaDB: Port 3307
-- PostgreSQL: Port 5432
-- SQLite: Embedded in the container
-- Microsoft SQL Server (MSSQL): Port 1433
-- Oracle: Port 1521
-- CockroachDB: Port 26257 (Admin UI on port 8080)
-
-Each database is seeded with two tables (Person, Addresses) and 10 rows of sample data.
-
-This ensures that all functional tests are run against multiple database systems, ensuring 
-full compatibility of the Hydra library across different environments.
+The suite verifies that:
+- Person contains 10 rows
+- Addresses contains 10 rows
+- Person(id=1) is John Doe, sex M
+- Addresses(id=1) belongs to user 1 and is 123 Main St, Apt 4, New York, NY, 10001, USA

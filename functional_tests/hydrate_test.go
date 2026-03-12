@@ -1,7 +1,13 @@
+//go:build integration
+// +build integration
+
 package functional_tests
 
 import "testing"
 
-func TestHydrate(t *testing.T) {
-	// TODO: Add functional_tests for Hydrate method
+func TestHydrateSQLite(t *testing.T) {
+	db := mustCreateSQLiteFunctionalDB(t)
+	defer db.Close()
+
+	runHydrateScenariosSQL(t, db, "sqlite")
 }

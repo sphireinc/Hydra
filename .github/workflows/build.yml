@@ -1,164 +1,113 @@
-# This workflow will build a golang project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
-
-name: Build
+name: CI
 
 on:
   push:
-    branches: [ "main" ]
-#  pull_request:
+    branches:
+      - main
+      - master
+    tags-ignore:
+      - "v*"
+  pull_request:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
 
 concurrency:
-  group: ${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
-  fmt:
-    name: Go Fmt
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@master
-      - name: fmt
-        uses: danhunsaker/golang-github-actions@v1.3.0
-        with:
-          run: fmt
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-  imports:
-    name: Go Imports
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@master
-      - name: imports
-        uses: danhunsaker/golang-github-actions@v1.3.0
-        with:
-          run: imports
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-  vet:
-    name: Go Vet
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@master
-      - name: vet
-        uses: danhunsaker/golang-github-actions@v1.3.0
-        with:
-          run: vet
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-  shadow:
-    name: Shadow Analyzer
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@master
-      - name: shadow
-        uses: danhunsaker/golang-github-actions@v1.3.0
-        with:
-          run: shadow
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-  misspell:
-    name: Spell Check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@master
-      - name: misspell
-        uses: danhunsaker/golang-github-actions@v1.3.0
-        with:
-          run: misspell
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-#  gocyclo:
-#    name: Cyclomatic Complexity
-#    runs-on: ubuntu-latest
-#    steps:
-#      - uses: actions/checkout@master
-#      - name: gocyclo
-#        uses: danhunsaker/golang-github-actions@v1.3.0
-#        with:
-#          run: cyclo
-#          token: ${{ secrets.GITHUB_TOKEN }}
-#          flags: "-over 20"
-
-#  staticcheck:
-#    name: Static Check
-#    runs-on: ubuntu-latest
-#    steps:
-#      - uses: actions/checkout@master
-#      - name: staticcheck
-#        uses: danhunsaker/golang-github-actions@v1.3.0
-#        with:
-#          run: staticcheck
-#          token: ${{ secrets.GITHUB_TOKEN }}
-
-#  ineffassign:
-#    name: Ineffectual Assignments
-#    runs-on: ubuntu-latest
-#    steps:
-#      - uses: actions/checkout@master
-#      - name: ineffassign
-#        uses: danhunsaker/golang-github-actions@v1.3.0
-#        with:
-#          run: ineffassign
-#          token: ${{ secrets.GITHUB_TOKEN }}
-#          flags: "-buildvcs=false"
-
-  build:
+  unit-tests:
+    name: Unit tests (Go ${{ matrix.go-version }})
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        go: [ '1.22.4', '1.23' ]
+        go-version:
+          - "1.22"
+          - "1.23"
+
     steps:
-      - name: Checkout Code ${{ matrix.go }}
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Go ${{ matrix.go }}
-        uses: actions/setup-go@v4
+      - name: Set up Go
+        uses: actions/setup-go@v6
         with:
-          go-version: ${{ matrix.go }}
+          go-version: ${{ matrix.go-version }}
+          cache: true
 
-      - name: Tidy and Vendor ${{ matrix.go }}
-        run: |
-          go get -u
-          go mod tidy
-          go mod vendor
-
-      - name: Set Up GoTestFmt ${{ matrix.go }}
-        uses: GoTestTools/gotestfmt-action@v2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          version: v2.0.0
-
-      - name: Test ${{ matrix.go }}
+      - name: Verify formatting
         run: |
           set -euo pipefail
-          go test -json -v ./... 2>&1 | tee /tmp/gotest.log | gotestfmt
+          UNFORMATTED="$(gofmt -l .)"
+          if [ -n "${UNFORMATTED}" ]; then
+            echo "The following files are not gofmt-formatted:"
+            echo "${UNFORMATTED}"
+            exit 1
+          fi
 
-      - name: Archive markdown artifacts ${{ matrix.go }}
-        uses: actions/upload-artifact@v3
+      - name: Verify module files are tidy
+        run: |
+          set -euo pipefail
+          go mod tidy
+          if ! git diff --exit-code -- go.mod go.sum; then
+            echo "go.mod/go.sum are not tidy"
+            exit 1
+          fi
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Run unit tests
+        run: make test
+
+      - name: Run hydra package tests
+        run: make test-hydra
+
+  docs-check:
+    name: Docs generation check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
         with:
-          name: archive-markdown
-          path: |
-            docs
+          go-version-file: go.mod
+          cache: true
 
-      - name: Build Markdown Pages ${{ matrix.go }}
+      - name: Install gomarkdoc
+        run: go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@v1.1.0
+
+      - name: Generate package docs
         run: |
-          go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
-          gomarkdoc --output=docs/code/hydra.md ./hydra
+          set -euo pipefail
+          mkdir -p docs/code
+          "$(go env GOPATH)/bin/gomarkdoc" --output docs/code/hydra.md ./hydra
 
-      - name: Setup git Config ${{ matrix.go }}
-        run: |
-          git config user.name "GitHub Actions Bot"
-          git config user.email "<bot@github.com>"
+      - name: Upload generated docs artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-docs
+          path: docs/code/hydra.md
 
-      - name: Commit Docs ${{ matrix.go }}
-        run: |
-          # Stage the file, commit and push
-          git checkout gh-pages 2>/dev/null || git checkout -b gh-pages
-          git add ./docs/code
-          git commit -m "gh-pages gomarkdoc GHABOT"
-          git push -f origin gh-pages
-          git checkout main
+  functional-tests:
+    name: Functional tests (docker compose)
+    runs-on: ubuntu-latest
+    needs:
+      - unit-tests
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Build ${{ matrix.go }}
-        run: go build -v ./...
+      - name: Verify Docker Compose is available
+        run: docker compose version
+
+      - name: Run full functional suite
+        run: make test-func
