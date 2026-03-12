@@ -1,13 +1,19 @@
 package hydra
 
-import "testing"
+import (
+	"context"
+	"testing"
+)
 
 func TestFetchMySQL(t *testing.T) {
 	db := newTestSQLiteDB(t)
 	defer db.Close()
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	h := &Hydratable{}
-	result, err := h.fetchMySQL(db, "person", []string{"id", "name"}, map[string]interface{}{"id": 1})
+	result, err := h.fetchMySQL(ctx, db, "person", []string{"id", "name"}, map[string]interface{}{"id": 1})
 	if err != nil {
 		t.Fatalf("fetchMySQL: %v", err)
 	}
@@ -20,8 +26,11 @@ func TestFetchMySQLMultipleWhereClauses(t *testing.T) {
 	db := newTestSQLiteDB(t)
 	defer db.Close()
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	h := &Hydratable{}
-	result, err := h.fetchMySQL(db, "person", []string{"id", "name"}, map[string]interface{}{"id": 2, "name": "Bob"})
+	result, err := h.fetchMySQL(ctx, db, "person", []string{"id", "name"}, map[string]interface{}{"id": 2, "name": "Bob"})
 	if err != nil {
 		t.Fatalf("fetchMySQL: %v", err)
 	}

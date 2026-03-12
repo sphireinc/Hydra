@@ -1,13 +1,19 @@
 package hydra
 
-import "testing"
+import (
+	"context"
+	"testing"
+)
 
 func TestFetchMSSQL(t *testing.T) {
 	db := newTestSQLiteDB(t)
 	defer db.Close()
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	h := &Hydratable{}
-	result, err := h.fetchMSSQL(db, "person", []string{"id", "name"}, map[string]interface{}{"id": 2})
+	result, err := h.fetchMSSQL(ctx, db, "person", []string{"id", "name"}, map[string]interface{}{"id": 2})
 	if err != nil {
 		t.Fatalf("fetchMSSQL: %v", err)
 	}

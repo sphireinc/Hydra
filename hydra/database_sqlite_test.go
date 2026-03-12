@@ -1,6 +1,7 @@
 package hydra
 
 import (
+	"context"
 	"errors"
 	"testing"
 )
@@ -9,8 +10,11 @@ func TestFetchSQLite(t *testing.T) {
 	db := newTestSQLiteDB(t)
 	defer db.Close()
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	h := &Hydratable{}
-	result, err := h.fetchSQLite(db, "person", []string{"id", "name"}, map[string]interface{}{"id": 1})
+	result, err := h.fetchSQLite(ctx, db, "person", []string{"id", "name"}, map[string]interface{}{"id": 1})
 	if err != nil {
 		t.Fatalf("fetchSQLite: %v", err)
 	}
@@ -23,8 +27,11 @@ func TestFetchSQLiteNoRows(t *testing.T) {
 	db := newTestSQLiteDB(t)
 	defer db.Close()
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	h := &Hydratable{}
-	_, err := h.fetchSQLite(db, "person", []string{"id", "name"}, map[string]interface{}{"id": 999})
+	_, err := h.fetchSQLite(ctx, db, "person", []string{"id", "name"}, map[string]interface{}{"id": 999})
 	if !errors.Is(err, ErrNotFound) {
 		t.Fatalf("expected ErrNotFound, got: %v", err)
 	}

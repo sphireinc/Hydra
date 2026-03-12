@@ -1,13 +1,19 @@
 package hydra
 
-import "testing"
+import (
+	"context"
+	"testing"
+)
 
 func TestFetchOracle(t *testing.T) {
 	db := newTestSQLiteDB(t)
 	defer db.Close()
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	h := &Hydratable{}
-	result, err := h.fetchOracle(db, "person", []string{"id", "name"}, map[string]interface{}{"id": 1})
+	result, err := h.fetchOracle(ctx, db, "person", []string{"id", "name"}, map[string]interface{}{"id": 1})
 	if err != nil {
 		t.Fatalf("fetchOracle: %v", err)
 	}
