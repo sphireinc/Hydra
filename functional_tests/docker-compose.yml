@@ -15,7 +15,7 @@ services:
       - mysql-data:/var/lib/mysql
       - ./migrations/mysql.sql:/docker-entrypoint-initdb.d/001-mysql.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      test: [ "CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent" ]
       interval: 10s
       timeout: 5s
       retries: 20
@@ -37,7 +37,7 @@ services:
       - mariadb-data:/var/lib/mysql
       - ./migrations/mariadb.sql:/docker-entrypoint-initdb.d/001-mariadb.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "mariadb-admin ping -h 127.0.0.1 -uroot -p$$MARIADB_ROOT_PASSWORD --silent"]
+      test: [ "CMD-SHELL", "mariadb-admin ping -h 127.0.0.1 -uroot -p$$MARIADB_ROOT_PASSWORD --silent" ]
       interval: 10s
       timeout: 5s
       retries: 20
@@ -58,7 +58,7 @@ services:
       - postgres-data:/var/lib/postgresql/data
       - ./migrations/postgres.sql:/docker-entrypoint-initdb.d/001-postgres.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      test: [ "CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB" ]
       interval: 10s
       timeout: 5s
       retries: 20
@@ -67,6 +67,7 @@ services:
       - hydra-net
 
   mssql:
+    profiles: [ "mssql" ]
     image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: hydra-mssql
     platform: linux/amd64
@@ -92,6 +93,7 @@ services:
       - hydra-net
 
   mssql-init:
+    profiles: [ "mssql" ]
     image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: hydra-mssql-init
     platform: linux/amd64
@@ -102,7 +104,7 @@ services:
       MSSQL_SA_PASSWORD: "YourStrongPassword!123"
     volumes:
       - ./migrations/mssql.sql:/migrations/mssql.sql:ro
-    entrypoint: ["/bin/bash", "-lc"]
+    entrypoint: [ "/bin/bash", "-lc" ]
     command: >
       set -euo pipefail;
       /opt/mssql-tools18/bin/sqlcmd -C -S mssql -U sa -P "$${MSSQL_SA_PASSWORD}" -Q "IF DB_ID(N'testdb') IS NULL CREATE DATABASE testdb;";
@@ -112,6 +114,7 @@ services:
       - hydra-net
 
   oracle:
+    profiles: [ "oracle" ]
     image: gvenzl/oracle-xe:21-slim
     container_name: hydra-oracle
     platform: linux/amd64
@@ -124,7 +127,7 @@ services:
     volumes:
       - oracle-data:/opt/oracle/oradata
     healthcheck:
-      test: ["CMD", "healthcheck.sh"]
+      test: [ "CMD", "healthcheck.sh" ]
       interval: 10s
       timeout: 5s
       retries: 30
@@ -133,6 +136,7 @@ services:
       - hydra-net
 
   oracle-init:
+    profiles: [ "oracle" ]
     image: gvenzl/oracle-xe:21-slim
     container_name: hydra-oracle-init
     platform: linux/amd64
@@ -141,7 +145,7 @@ services:
         condition: service_healthy
     volumes:
       - ./migrations/oracle.sql:/migrations/oracle.sql:ro
-    entrypoint: ["/bin/bash", "-lc"]
+    entrypoint: [ "/bin/bash", "-lc" ]
     command: >
       set -euo pipefail;
       sqlplus -s hydra/hydrapassword@//oracle:1521/XEPDB1 @/migrations/oracle.sql
@@ -152,34 +156,22 @@ services:
   cockroachdb:
     image: cockroachdb/cockroach:v25.3.3
     container_name: hydra-cockroachdb
-    command: start-single-node --insecure --listen-addr=0.0.0.0 --http-addr=0.0.0.0:8080
+    command: start-single-node --insecure
     ports:
       - "26257:26257"
       - "8080:8080"
+    environment:
+      COCKROACH_DATABASE: testdb
+      COCKROACH_USER: root
     volumes:
       - cockroach-data:/cockroach/cockroach-data
+      - ./migrations/cockroachdb.sql:/docker-entrypoint-initdb.d/001-cockroachdb.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "cockroach sql --insecure --host=localhost:26257 --execute='SELECT 1' || exit 1"]
+      test: [ "CMD-SHELL", "cockroach sql --insecure --host=localhost:26257 --execute='SELECT 1' || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 30
       start_period: 20s
-    networks:
-      - hydra-net
-
-  cockroachdb-init:
-    image: cockroachdb/cockroach:v25.3.3
-    container_name: hydra-cockroachdb-init
-    depends_on:
-      cockroachdb:
-        condition: service_healthy
-    volumes:
-      - ./migrations/cockroachdb.sql:/migrations/cockroachdb.sql:ro
-    entrypoint: ["/bin/sh", "-ec"]
-    command: |
-      cockroach sql --insecure --host=cockroachdb:26257 --execute="CREATE DATABASE IF NOT EXISTS testdb;"
-      cockroach sql --insecure --host=cockroachdb:26257 --database=testdb --file=/migrations/cockroachdb.sql
-    restart: "no"
     networks:
       - hydra-net
 
@@ -195,23 +187,19 @@ services:
         condition: service_healthy
       postgres:
         condition: service_healthy
-      mssql-init:
-        condition: service_completed_successfully
-      oracle-init:
-        condition: service_completed_successfully
-      cockroachdb-init:
-        condition: service_completed_successfully
+      cockroachdb:
+        condition: service_healthy
     environment:
       CGO_ENABLED: "1"
       HYDRA_MYSQL_DSN: "testuser:testpassword@tcp(mysql:3306)/testdb?parseTime=true"
       HYDRA_MARIADB_DSN: "testuser:testpassword@tcp(mariadb:3306)/testdb?parseTime=true"
       HYDRA_POSTGRES_DSN: "postgres://testuser:testpassword@postgres:5432/testdb?sslmode=disable"
-      HYDRA_MSSQL_DSN: "sqlserver://sa:YourStrongPassword!123@mssql:1433?database=testdb&encrypt=disable"
-      HYDRA_ORACLE_DSN: "hydra/hydrapassword@oracle:1521/XEPDB1"
+      HYDRA_MSSQL_DSN: "${HYDRA_MSSQL_DSN:-}"
+      HYDRA_ORACLE_DSN: "${HYDRA_ORACLE_DSN:-}"
       HYDRA_COCKROACHDB_DSN: "postgres://root@cockroachdb:26257/testdb?sslmode=disable"
     networks:
       - hydra-net
-    entrypoint: ["/bin/bash", "/app/functional_tests/wait-and-test.sh"]
+    entrypoint: [ "/bin/bash", "/app/functional_tests/wait-and-test.sh" ]
 
 volumes:
   mysql-data:

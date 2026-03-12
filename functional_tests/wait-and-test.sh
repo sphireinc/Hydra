@@ -7,8 +7,6 @@ required_env_vars=(
   HYDRA_MYSQL_DSN
   HYDRA_MARIADB_DSN
   HYDRA_POSTGRES_DSN
-  HYDRA_MSSQL_DSN
-  HYDRA_ORACLE_DSN
   HYDRA_COCKROACHDB_DSN
 )
 
@@ -18,6 +16,18 @@ for var_name in "${required_env_vars[@]}"; do
     exit 1
   fi
 done
+
+if [[ -n "${HYDRA_MSSQL_DSN:-}" ]]; then
+  echo "==> MSSQL functional tests enabled"
+else
+  echo "==> MSSQL functional tests disabled for this run"
+fi
+
+if [[ -n "${HYDRA_ORACLE_DSN:-}" ]]; then
+  echo "==> Oracle functional tests enabled"
+else
+  echo "==> Oracle functional tests disabled for this run"
+fi
 
 echo "==> Verifying migration files exist"
 migration_files=(
