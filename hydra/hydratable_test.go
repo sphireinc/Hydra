@@ -33,8 +33,8 @@ func TestInitTableDriven(t *testing.T) {
 				p := initPerson{}
 				return p, &p.Hydratable
 			},
-			expectInitialized: false,
-			expectSelfStored:  false,
+			expectInitialized: true,
+			expectSelfStored:  true,
 		},
 		{
 			name: "non struct input",
