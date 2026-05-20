@@ -8,7 +8,7 @@
 [![Release Date](https://img.shields.io/github/release-date/sphireinc/hydra)](https://github.com/sphireinc/Hydra/releases/latest)
 
 <div align="center">
-  <img src="assets/logo.jpg" width="400px" alt="logo" />
+  <img src="assets/new_logo_2.png" width="400px" alt="logo" />
 </div>
 
 Sphire Hydra is a Go library for hydrating Go structs from database rows using reflection and `hydra` tags.
